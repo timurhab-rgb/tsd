@@ -1,0 +1,351 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"/>
+<meta name="theme-color" content="#101418"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<title>ТСД — Симулятор сортировки и подбора</title>
+<style>
+:root{ --body:#33383d; --yellow:#cddc39; --blue:#2f6fe4; --orange:#f2603c; --green:#1c963c; }
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+html,body{margin:0;min-height:100%;}
+body{
+  background:radial-gradient(1200px 700px at 50% 20%, #232a31, #0e1114 70%);
+  display:block; overflow:auto; touch-action:manipulation;
+  font-family:Roboto,system-ui,-apple-system,'Segoe UI',sans-serif;
+}
+#wrap{display:flex;justify-content:center;padding-top:8px;}
+#stage{transform-origin:top center;}
+.terminal{
+  width:320px; background:linear-gradient(180deg,#3b4046,#24282c 60%,#1d2124);
+  border-radius:44px; padding:16px 14px 22px; position:relative;
+  box-shadow:0 24px 60px rgba(0,0,0,.6), inset 0 2px 3px rgba(255,255,255,.15), inset 0 -3px 6px rgba(0,0,0,.6);
+}
+.terminal::before,.terminal::after{content:'';position:absolute;top:150px;width:4px;height:70px;background:var(--yellow);border-radius:2px;opacity:.85;}
+.terminal::before{left:-2px;} .terminal::after{right:-2px;}
+.bezel{background:#101214;border-radius:26px;padding:12px 12px 6px;box-shadow:inset 0 0 0 2px #05070a, inset 0 2px 6px rgba(0,0,0,.8);}
+.screen{position:relative;width:100%;height:352px;background:#f4f6f8;border-radius:6px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 0 0 2px #000;user-select:none;}
+.statusbar{background:#fff;border-bottom:1px solid #e6eaee;color:#333;font-size:10px;padding:3px 8px;display:flex;justify-content:space-between;font-weight:600;}
+.app{display:flex;flex-direction:column;flex:1;min-height:0;}
+.app-h{background:var(--blue);color:#fff;font-size:12.5px;font-weight:600;padding:9px 12px;display:flex;justify-content:space-between;align-items:center;}
+.vdots{font-size:16px;line-height:1;opacity:.9;}
+.app-b{flex:1;overflow-y:auto;background:#f4f6f8;padding-bottom:8px;}
+.app-f{background:#eef1f4;border-top:1px solid #dde2e8;padding:6px 10px;display:flex;justify-content:space-between;align-items:center;}
+.pill{background:#e8f0fe;color:var(--blue);font-size:11px;font-weight:700;padding:3px 10px;border-radius:8px;}
+.homebtn{border:none;background:none;font-size:15px;color:#66707a;cursor:pointer;padding:2px 8px;}
+.card{display:flex;gap:10px;align-items:center;background:#fff;border:1px solid #e3e6ea;border-radius:10px;margin:10px 12px 0;padding:8px 10px;}
+.ticon{font-size:20px;}
+.lbl{font-size:9.5px;color:#98a1aa;text-transform:uppercase;letter-spacing:.6px;font-weight:700;}
+.tnum{font-weight:700;color:#333;font-size:13px;}
+.srow{display:flex;justify-content:space-between;margin:10px 12px 0;}
+.badge{background:#e8f0fe;color:var(--blue);font-size:10.5px;font-weight:700;padding:3px 9px;border-radius:6px;}
+.lbl.up{margin:8px 12px 2px;}
+.block{border-radius:10px;padding:9px 12px;margin:4px 12px 0;}
+.orange{background:var(--orange);color:#fff;font-weight:600;display:flex;gap:8px;align-items:center;font-size:13px;}
+.white{background:#fff;border:1px solid #e2e6eb;}
+.big{font-size:19px;font-weight:800;text-align:center;color:#14181c;padding:7px 12px;letter-spacing:.5px;}
+.blbl{font-size:9px;color:#98a1aa;text-transform:uppercase;letter-spacing:.6px;text-align:center;font-weight:700;}
+.shelf{font-size:30px;font-weight:800;text-align:center;color:#14181c;letter-spacing:1px;}
+.pname{font-size:15px;font-weight:800;color:#14181c;text-align:center;}
+.psku{font-size:10px;color:#98a1aa;text-align:center;margin-top:2px;}
+.pqty{margin-top:6px;background:var(--orange);color:#fff;border-radius:8px;text-align:center;font-weight:800;font-size:15px;padding:6px;}
+.viewfind{margin:14px auto 6px;width:78%;background:#fff;border:1px solid #e3e6ea;border-radius:12px;padding:16px 12px;text-align:center;}
+.barcode{height:56px;margin:0 6px;background:repeating-linear-gradient(90deg,#14181c 0 2px,transparent 2px 4px,#14181c 4px 7px,transparent 7px 9px,#14181c 9px 10px,transparent 10px 14px);}
+.vfh{margin-top:8px;font-size:12px;color:#66707a;font-weight:600;}
+.hint{font-size:11.5px;color:#7a838c;text-align:center;margin:10px 14px;}
+.hint b{color:#333;}
+.menu{padding:12px;}
+.mcard{display:flex;gap:10px;align-items:center;background:#fff;border:1px solid #e2e6eb;border-radius:12px;padding:12px;margin-bottom:10px;cursor:pointer;}
+.mcard:active{transform:scale(.98);}
+.mic{font-size:24px;}
+.mtitle{font-size:14px;font-weight:800;color:#14181c;}
+.msub{font-size:10.5px;color:#8a949c;margin-top:2px;}
+.mkey{margin-left:auto;width:26px;height:26px;border-radius:8px;background:#e8f0fe;color:var(--blue);font-weight:800;display:flex;align-items:center;justify-content:center;font-size:13px;}
+.finish{padding:30px 20px;text-align:center;}
+.fcheck{width:70px;height:70px;margin:0 auto 14px;border-radius:50%;background:var(--green);color:#fff;font-size:38px;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 18px rgba(28,150,60,.4);}
+.ftitle{font-size:16px;font-weight:800;color:#173a24;}
+.fsub{font-size:12px;color:#5c6b60;margin-top:4px;}
+.btnrow{display:flex;gap:8px;justify-content:center;margin-top:14px;}
+.abtn{border:none;border-radius:10px;padding:10px 14px;font-size:12px;font-weight:700;background:#e8f0fe;color:var(--blue);cursor:pointer;}
+.abtn.green{background:var(--green);color:#fff;}
+.overlay{position:absolute;inset:0;display:none;align-items:center;justify-content:center;z-index:5;}
+.overlay.show{display:flex;}
+#scanOv{background:rgba(10,12,16,.55);}
+.vf{position:absolute;inset:18% 10%;border:2px solid rgba(255,255,255,.85);border-radius:12px;}
+.laser{position:absolute;left:12%;right:12%;top:22%;height:3px;background:#ff2d2d;box-shadow:0 0 14px 3px rgba(255,45,45,.8);animation:sweep .48s ease-in-out;}
+@keyframes sweep{from{top:22%}50%{top:74%}to{top:22%}}
+#okOv{background:rgba(28,150,60,.96);}
+.okcard{text-align:center;color:#fff;font-weight:700;font-size:15px;padding:0 20px;}
+.check{width:64px;height:64px;border:4px solid #fff;border-radius:50%;font-size:36px;display:flex;align-items:center;justify-content:center;margin:0 auto 10px;}
+#flashEl{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;transition:opacity .1s;z-index:8;}
+#flashEl.on{opacity:.95;}
+.toast{position:absolute;left:50%;bottom:10px;transform:translateX(-50%);background:rgba(0,0,0,.8);color:#fff;font-size:11px;padding:6px 12px;border-radius:14px;display:none;z-index:9;white-space:nowrap;}
+.toast.show{display:block;}
+.logo{color:#cfd4d9;font-size:12px;font-style:italic;text-align:center;padding:8px 0 2px;font-weight:600;letter-spacing:.5px;}
+.keypad{padding:12px 18px 4px;display:flex;flex-direction:column;gap:9px;}
+.krow{display:flex;justify-content:space-between;align-items:center;gap:10px;}
+.key{background:linear-gradient(180deg,#33383c,#24282b);border:1px solid #4d5358;border-radius:999px;color:#e8ebee;font-size:13px;font-weight:600;width:74px;text-align:center;box-shadow:0 2px 3px rgba(0,0,0,.5), inset 0 1px 1px rgba(255,255,255,.12);display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.1;cursor:pointer;touch-action:manipulation;}
+.key i{font-style:normal;font-size:8px;color:#9aa1a7;letter-spacing:1px;}
+.key .ic{font-size:11px;}
+.key:active{transform:translateY(1px);background:#1e2225;}
+.oval{height:44px;gap:1px;}
+.num{height:34px;flex-direction:row;gap:6px;font-size:14px;}
+.scanbtn{width:64px;height:64px;border-radius:50%;border:none;cursor:pointer;position:relative;
+  background:radial-gradient(circle at 35% 30%, #e6f46b, #cddc39 55%, #aebc22);
+  box-shadow:0 0 0 6px #202428, 0 0 0 7px #4d5358, 0 4px 10px rgba(0,0,0,.6), inset 0 -4px 8px rgba(0,0,0,.25);
+  touch-action:manipulation;}
+.scanbtn::after{content:'';position:absolute;inset:6px;border-radius:50%;background-image:radial-gradient(rgba(0,0,0,.15) 1px, transparent 1.2px);background-size:6px 6px;}
+.scanbtn:active,.scanbtn.active{box-shadow:0 0 0 6px #202428,0 0 0 7px #4d5358,0 2px 4px rgba(0,0,0,.6), inset 0 3px 8px rgba(0,0,0,.4);transform:translateY(1px);}
+.strap{width:64px;height:52px;margin:-4px auto 0;background:repeating-linear-gradient(45deg,#b9bdbf 0 3px,#d7dadb 3px 6px);border-radius:0 0 8px 8px;box-shadow:inset 0 4px 6px rgba(0,0,0,.35);}
+.help{position:fixed;bottom:6px;left:50%;transform:translateX(-50%);color:#8a949c;font-size:11px;background:rgba(0,0,0,.4);padding:4px 10px;border-radius:10px;z-index:50;white-space:nowrap;}
+</style>
+</head>
+<body>
+<div id="wrap">
+  <div id="stage">
+    <div class="terminal">
+      <div class="bezel">
+        <div class="screen">
+          <div class="statusbar"><span id="clock">8:00</span><span>LTE ▂▄▆ 🔋72%</span></div>
+          <div class="app">
+            <header class="app-h"><span id="appTitle">Главное меню</span><span class="vdots">⋮</span></header>
+            <div class="app-b" id="appBody"></div>
+            <footer class="app-f"><button class="homebtn" id="homeBtn" title="В меню">⌂</button><span class="pill" id="pill">—</span></footer>
+          </div>
+          <div class="overlay" id="scanOv"><div class="vf"></div><div class="laser"></div></div>
+          <div class="overlay" id="okOv"><div class="okcard"><div class="check">✓</div><div id="okText">Готово</div></div></div>
+          <div id="flashEl"></div>
+          <div class="toast" id="toast"></div>
+        </div>
+        <div class="logo">iData</div>
+      </div>
+      <div class="keypad">
+        <div class="krow">
+          <button class="key oval" data-k="ok"><span class="ic">⌫</span><b>OK</b></button>
+          <button class="scanbtn" id="scanBtn" aria-label="Скан"></button>
+          <button class="key oval" data-k="fn"><span class="ic">↩</span><b>Fn</b></button>
+        </div>
+        <div class="krow"><button class="key num" data-n="1">1<i>.,/</i></button><button class="key num" data-n="2">2<i>ABC</i></button><button class="key num" data-n="3">3<i>DEF</i></button></div>
+        <div class="krow"><button class="key num" data-n="4">4<i>GHI</i></button><button class="key num" data-n="5">5<i>JKL</i></button><button class="key num" data-n="6">6<i>MNO</i></button></div>
+        <div class="krow"><button class="key num" data-n="7">7<i>PQRS</i></button><button class="key num" data-n="8">8<i>TUV</i></button><button class="key num" data-n="9">9<i>WXYZ</i></button></div>
+        <div class="krow"><button class="key num">⌂<i>LAB</i></button><button class="key num" data-n="0">0<i>␣</i></button><button class="key num">•••<i>&nbsp;</i></button></div>
+      </div>
+    </div>
+    <div class="strap"></div>
+  </div>
+</div>
+<div class="help">Жёлтая / Пробел — скан • меню: 1 или 2 • F — звук • R — сброс • ⌂ — меню</div>
+
+<script>
+(function(){
+'use strict';
+/* ==========================================================
+   НАСТРОЙКА 1: СОРТИРОВКА — 12 товаров по 6 ячейкам
+   Ячейки: A1,A2,A3,C1,C2,C3 (могут повторяться).
+   SHUFFLE=true — случайный порядок каждую смену.
+   ========================================================== */
+const CELLS = ['C1','A1','C2','A2','C3','A3','C1','A1','C2','A2','C3','A3'];
+const SHUFFLE = false;
+
+/* ==========================================================
+   НАСТРОЙКА 2: ПОДБОР — 12 позиций (6 чекушек + 6 закусок)
+   Зоны: A = закуски, C = чекушки. Порядок: сначала чекушка, потом закуска.
+   ========================================================== */
+const PICK_TASKS = [
+  { cell:'C1', sku:'CHK-001', name:'Чекушка',  qty:1 },
+  { cell:'A1', sku:'ZKS-001', name:'Закуска',  qty:1 },
+  { cell:'C2', sku:'CHK-002', name:'Чекушка',  qty:1 },
+  { cell:'A2', sku:'ZKS-002', name:'Закуска',  qty:1 },
+  { cell:'C3', sku:'CHK-003', name:'Чекушка',  qty:1 },
+  { cell:'A3', sku:'ZKS-003', name:'Закуска',  qty:1 },
+  { cell:'C1', sku:'CHK-004', name:'Чекушка',  qty:1 },
+  { cell:'A1', sku:'ZKS-004', name:'Закуска',  qty:1 },
+  { cell:'C2', sku:'CHK-005', name:'Чекушка',  qty:1 },
+  { cell:'A2', sku:'ZKS-005', name:'Закуска',  qty:1 },
+  { cell:'C3', sku:'CHK-006', name:'Чекушка',  qty:1 },
+  { cell:'A3', sku:'ZKS-006', name:'Закуска',  qty:1 },
+];
+const ORDER_NO = 'Ozon-10482';
+
+const SCAN_KEYS = ['Space','Enter','F2','F8'];
+
+function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); const t=a[i]; a[i]=a[j]; a[j]=t; } return a; }
+function buildTasks(){
+  const list = SHUFFLE ? shuffle(CELLS.slice()) : CELLS.slice();
+  return list.map(function(c){ return { alley: 'Аллея ' + c.charAt(0), shelf: c }; });
+}
+
+let mode='menu';            // 'menu' | 'sort' | 'pick'
+let phase='menu';
+let TASKS = buildTasks(), idx=0, done=0;          // сортировка
+let pidx=0, picked=0;                              // подбор
+let muted=false, busy=false;
+
+const $=id=>document.getElementById(id);
+const appBody=$('appBody'), pill=$('pill'), toastEl=$('toast'), scanOv=$('scanOv'),
+      okOv=$('okOv'), okText=$('okText'), flashEl=$('flashEl'), scanBtn=$('scanBtn'),
+      clockEl=$('clock'), appTitle=$('appTitle');
+
+/* ---------- звук ---------- */
+let actx=null;
+function beep(freq,dur,delay){
+  if(muted) return;
+  try{
+    actx=actx||new (window.AudioContext||window.webkitAudioContext)();
+    if(actx.state==='suspended') actx.resume();
+    const t0=actx.currentTime+(delay||0);
+    const o=actx.createOscillator(), g=actx.createGain();
+    o.type='square'; o.frequency.value=freq;
+    g.gain.setValueAtTime(0.0001,t0);
+    g.gain.exponentialRampToValueAtTime(0.25,t0+0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001,t0+dur);
+    o.connect(g); g.connect(actx.destination);
+    o.start(t0); o.stop(t0+dur+0.05);
+  }catch(e){}
+}
+
+/* ---------- старт операций ---------- */
+function goMenu(){ mode='menu'; phase='menu'; render(); }
+function startSort(){ mode='sort'; phase='scan'; idx=0; done=0; TASKS=buildTasks(); render(); }
+function startPick(){ mode='pick'; phase='p_cell'; pidx=0; picked=0; render(); }
+
+/* ---------- отрисовка ---------- */
+function tareCard(){ return '<div class="card"><div class="ticon">📦</div><div><div class="lbl">Тара</div><div class="tnum">bx'+(7543650+idx)+'</div></div></div>'; }
+function orderCard(){ return '<div class="card"><div class="ticon">🛒</div><div><div class="lbl">Заказ</div><div class="tnum">'+ORDER_NO+'</div></div><span class="badge" style="margin-left:auto">'+picked+'/'+PICK_TASKS.length+'</span></div>'; }
+function render(){
+  if(mode==='menu'){
+    appTitle.textContent='Главное меню'; pill.textContent='—';
+    appBody.innerHTML =
+      '<div class="menu">'+
+        '<div class="mcard" data-mode="sort"><div class="mic">📦</div><div><div class="mtitle">Сортировка</div><div class="msub">'+CELLS.length+' товаров по ячейкам</div></div><div class="mkey">1</div></div>'+
+        '<div class="mcard" data-mode="pick"><div class="mic">🛒</div><div><div class="mtitle">Подбор товара</div><div class="msub">Сборка заказа, '+PICK_TASKS.length+' позиций</div></div><div class="mkey">2</div></div>'+
+        '<div class="hint">Нажми на операцию или клавиши <b>1</b> / <b>2</b></div>'+
+      '</div>';
+    return;
+  }
+  if(mode==='sort'){
+    appTitle.textContent='Маршрутизированная сортировка';
+    pill.textContent=done+'/'+TASKS.length;
+    if(phase==='scan'){
+      appBody.innerHTML = tareCard() +
+        '<div class="viewfind"><div class="barcode"></div><div class="vfh">Сканируйте тару</div></div>'+
+        '<div class="hint">Нажмите <b>жёлтую кнопку</b> — скан</div>';
+    } else if(phase==='place'){
+      const t=TASKS[idx];
+      appBody.innerHTML = tareCard() +
+        '<div class="srow"><span class="badge">Шаг 1</span><span class="badge">'+done+'/'+TASKS.length+'</span></div>'+
+        '<div class="lbl up">Перенести в</div>'+
+        '<div class="block orange"><span>📍</span>Аллея '+t.alley.split(' ')[1]+'</div>'+
+        '<div class="block white"><div class="blbl">Ячейка</div><div class="shelf">'+t.shelf+'</div></div>'+
+        '<div class="hint">На ячейке нажмите <b>жёлтую кнопку</b></div>';
+    } else {
+      appBody.innerHTML = '<div class="finish"><div class="fcheck">✓</div><div class="ftitle">Сортировка завершена</div>'+
+        '<div class="fsub">'+TASKS.length+'/'+TASKS.length+' товаров размещено</div>'+
+        '<div class="btnrow"><button class="abtn green" data-act="restart">Новая смена</button><button class="abtn" data-act="menu">В меню</button></div></div>';
+    }
+    return;
+  }
+  /* подбор */
+  appTitle.textContent='Подбор товара';
+  pill.textContent=picked+'/'+PICK_TASKS.length;
+  if(phase==='p_cell'){
+    const t=PICK_TASKS[pidx];
+    appBody.innerHTML = orderCard() +
+      '<div class="srow"><span class="badge">Шаг 1</span><span class="badge">'+picked+'/'+PICK_TASKS.length+'</span></div>'+
+      '<div class="lbl up">Перейти в ячейку</div>'+
+      '<div class="block orange"><span>📍</span>Ячейка хранения</div>'+
+      '<div class="block white big">'+t.cell+'</div>'+
+      '<div class="hint">На ячейке нажмите <b>жёлтую кнопку</b> (скан ячейки)</div>';
+  } else if(phase==='p_item'){
+    const t=PICK_TASKS[pidx];
+    appBody.innerHTML = orderCard() +
+      '<div class="srow"><span class="badge">Шаг 2</span><span class="badge">'+picked+'/'+PICK_TASKS.length+'</span></div>'+
+      '<div class="lbl up">Товар в ячейке '+t.cell+'</div>'+
+      '<div class="block white"><div class="pname">'+t.name+'</div><div class="psku">Артикул: '+t.sku+'</div><div class="pqty">Взять: '+t.qty+' шт</div></div>'+
+      '<div class="hint">Отсканируй товар <b>жёлтой кнопкой</b> и положи в тару</div>';
+  } else {
+    appBody.innerHTML = '<div class="finish"><div class="fcheck">✓</div><div class="ftitle">Подбор завершён</div>'+
+      '<div class="fsub">Заказ '+ORDER_NO+' собран: '+PICK_TASKS.length+' позиций</div>'+
+      '<div class="btnrow"><button class="abtn green" data-act="restart">Новый заказ</button><button class="abtn" data-act="menu">В меню</button></div></div>';
+  }
+}
+function toast(msg){ toastEl.textContent=msg; toastEl.classList.add('show'); clearTimeout(toast._t); toast._t=setTimeout(()=>toastEl.classList.remove('show'),1600); }
+function showScanOv(){ const l=scanOv.querySelector('.laser'); l.style.animation='none'; void l.offsetWidth; l.style.animation=''; scanOv.classList.add('show'); }
+function showOk(text){ okText.textContent=text; okOv.classList.add('show'); }
+
+/* ---------- жёлтая кнопка (пик + лазер, без фонарика) ---------- */
+function pressScan(){
+  if(busy) return;
+  if(mode==='menu'){ toast('Выбери операцию на экране'); return; }
+  if(mode==='sort' && phase==='finish'){ startSort(); return; }
+  if(mode==='pick' && phase==='p_finish'){ startPick(); return; }
+  busy=true;
+  scanBtn.classList.add('active'); setTimeout(()=>scanBtn.classList.remove('active'),180);
+  beep(1568,0.12,0);
+  if(navigator.vibrate) navigator.vibrate(90);
+  showScanOv();
+  setTimeout(()=>{
+    scanOv.classList.remove('show');
+    if(mode==='sort'){
+      if(phase==='scan'){ phase='place'; render(); busy=false; }
+      else{
+        done++; render(); showOk('Ячейка подтверждена: '+TASKS[idx].shelf);
+        beep(1319,0.09,0.05); beep(1760,0.14,0.16);
+        setTimeout(()=>{ okOv.classList.remove('show'); idx++; phase=(idx<TASKS.length)?'scan':'finish'; render(); busy=false; },950);
+      }
+    } else { // pick
+      if(phase==='p_cell'){ phase='p_item'; render(); busy=false; }
+      else{
+        const q=PICK_TASKS[pidx].qty;
+        picked++; render(); showOk('Взято: '+q+' шт → в тару');
+        beep(1319,0.09,0.05); beep(1760,0.14,0.16);
+        setTimeout(()=>{ okOv.classList.remove('show'); pidx++; phase=(pidx<PICK_TASKS.length)?'p_cell':'p_finish'; render(); busy=false; },950);
+      }
+    }
+  },480);
+}
+
+/* ---------- события ---------- */
+scanBtn.addEventListener('click',pressScan);
+$('homeBtn').addEventListener('click',function(){ if(mode!=='menu') goMenu(); });
+appBody.addEventListener('click',function(e){
+  const m=e.target.closest('[data-mode]');
+  if(m){ (m.dataset.mode==='sort')?startSort():startPick(); return; }
+  const a=e.target.closest('[data-act]');
+  if(a){ (a.dataset.act==='restart') ? ((mode==='sort')?startSort():startPick()) : goMenu(); }
+});
+document.querySelectorAll('.key').forEach(k=>k.addEventListener('click',()=>{
+  const kind=k.dataset.k, n=k.dataset.n;
+  if(kind==='ok'){
+    if(mode==='sort'&&phase==='finish') startSort();
+    else if(mode==='pick'&&phase==='p_finish') startPick();
+    else toast('OK');
+  }
+  else if(kind==='fn'){ muted=!muted; toast(muted?'Звук выключен':'Звук включён'); }
+  else if(n && mode==='menu'){ (n==='1')?startSort():(n==='2')?startPick():toast('Нет такой операции'); }
+}));
+window.addEventListener('keydown',e=>{
+  if(SCAN_KEYS.includes(e.code)){ e.preventDefault(); pressScan(); }
+  else if(e.code==='KeyF'){ muted=!muted; toast(muted?'Звук выключен':'Звук включён'); }
+  else if(e.code==='KeyR'){ if(mode==='sort')startSort(); else if(mode==='pick')startPick(); }
+  else if(mode==='menu' && (e.code==='Digit1'||e.code==='Numpad1')) startSort();
+  else if(mode==='menu' && (e.code==='Digit2'||e.code==='Numpad2')) startPick();
+});
+
+/* ---------- часы и масштаб ---------- */
+function tick(){ const d=new Date(); clockEl.textContent=d.getHours()+':'+String(d.getMinutes()).padStart(2,'0'); }
+tick(); setInterval(tick,10000);
+function fit(){
+  const st=$('stage'); st.style.transform='none';
+  const w=st.offsetWidth, h=st.offsetHeight;
+  const s=Math.min(1,(window.innerWidth-8)/w,(window.innerHeight-8)/h);
+  st.style.transform='scale('+s+')';
+  $('wrap').style.height=(h*s+16)+'px';
+}
+window.addEventListener('resize',fit);
+render(); fit();
+})();
+</script>
+</body>
+</html>
